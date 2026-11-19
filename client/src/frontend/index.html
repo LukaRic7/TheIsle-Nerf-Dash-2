@@ -54,12 +54,13 @@
             <section class="map-section">
                 <div class="map-container">
                     <img src="../../config/map/world-map.png" class="world-map" alt="World map">
+                    <div class="map-overlay" id="map-overlay" aria-label="Player locations"></div>
                 </div>
             </section>
 
             <aside class="side-panel">
                 <section class="panel-content active metrics-panel" id="metrics-panel">
-                    <div class="player-grid">
+                    <div class="player-grid" id="player-grid">
                         <article class="player-card is-self" style="--player-color: #70c68a;">
                             <header class="player-card-header">
                                 <span class="player-color-dot" aria-label="Player color"></span>
@@ -240,6 +241,13 @@
                 </section>
 
                 <section class="panel-content" id="settings-panel">
+                    <section class="settings-section" aria-labelledby="player-server-heading">
+                        <h3 id="player-server-heading">Player Server</h3>
+                        <p class="status-message server-status" id="player-server-status">
+                            Starting player server connection…
+                        </p>
+                    </section>
+
                     <section class="settings-section" aria-labelledby="cookie-heading">
                         <h3 id="cookie-heading">API Cookie</h3>
                         <form class="cookie-form" id="cookie-form">

@@ -10,3 +10,17 @@ contextBridge.exposeInMainWorld('settingsAPI', {
         return () => ipcRenderer.removeListener('settings:stdout-message', listener);
     }
 });
+
+contextBridge.exposeInMainWorld('playerServerAPI', {
+    getState: () => ipcRenderer.invoke('player-server:get-state'),
+    onStatus: callback => {
+        const listener = (_event, status) => callback(status);
+        ipcRenderer.on('player-server:status', listener);
+        return () => ipcRenderer.removeListener('player-server:status', listener);
+    },
+    onDatapool: callback => {
+        const listener = (_event, datapool) => callback(datapool);
+        ipcRenderer.on('player-server:datapool', listener);
+        return () => ipcRenderer.removeListener('player-server:datapool', listener);
+    }
+});

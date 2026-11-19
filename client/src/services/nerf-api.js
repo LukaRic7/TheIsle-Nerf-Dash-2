@@ -120,8 +120,8 @@ class NerfApiStore {
                 accountCreatedAt: data.userData.inUsers.createdAt,
                 discord: {
                     id: data.userData.inUsers.discordId,
-                    avatarUrl: userData.inUsers.discordAvatar,
-                    username: serData.inUsers.discordUsername
+                    avatarUrl: data.userData.inUsers.discordAvatar,
+                    username: data.userData.inUsers.discordUsername
                 },
                 cooldowns: {
                     skin: data.userData.inUsers.skin_cooldown,

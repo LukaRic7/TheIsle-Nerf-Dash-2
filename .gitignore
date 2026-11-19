@@ -1,4 +1,5 @@
 node_modules/
 __pycache__/
 environment/
+client/config/environment/player-server.json
 TODO.md

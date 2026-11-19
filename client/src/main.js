@@ -40,13 +40,89 @@ process.stdout.write = function (chunk, encoding, callback) {
 
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { NerfApiStore } = require('./services/nerf-api.js');
+const { normalizePlayerData } = require('./services/player-data.js');
+const { PlayerServerClient } = require('./services/player-server.js');
 const fs = require('fs/promises');
 const path = require('path');
 
 const VERSION = '2.0';
 const COOKIE_FILE = path.join(__dirname, '..', 'config', 'environment', 'COOKIE');
+const PLAYER_SERVER_CONFIG_FILE = path.join(
+    __dirname,
+    '..',
+    'config',
+    'environment',
+    'player-server.json'
+);
+const PLAYER_DATA_REFRESH_INTERVAL_MS = 15_000;
 
 const nerfApiStore = new NerfApiStore();
+let playerServerClient = null;
+let playerDataRefreshTimer = null;
+let playerDataWarningShown = false;
+let latestDatapool = {};
+let latestPlayerServerStatus = {
+    state: 'starting',
+    color: null,
+    message: 'Starting player server connection…'
+};
+
+function publishPlayerServerStatus(status) {
+    latestPlayerServerStatus = status;
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+        mainWindow.webContents.send('player-server:status', status);
+    }
+}
+
+function publishDatapool(datapool) {
+    latestDatapool = datapool;
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+        mainWindow.webContents.send('player-server:datapool', datapool);
+    }
+}
+
+async function refreshPlayerData() {
+    await Promise.all([
+        nerfApiStore.refreshPlaytimeAndLevel(),
+        nerfApiStore.refreshMiscInformation()
+    ]);
+
+    const { data, invalidFields } = normalizePlayerData(
+        nerfApiStore.getPlaytimeAndLevel(),
+        nerfApiStore.getMiscInformation()
+    );
+    if (!data) {
+        if (!playerDataWarningShown) {
+            console.warn(
+                `Nerf API player data has invalid fields: ${invalidFields.join(', ')}`
+            );
+            playerDataWarningShown = true;
+        }
+        return;
+    }
+
+    playerDataWarningShown = false;
+    playerServerClient?.setData(data);
+}
+
+async function startPlayerServer() {
+    try {
+        const configText = await fs.readFile(PLAYER_SERVER_CONFIG_FILE, 'utf8');
+        const config = JSON.parse(configText);
+        playerServerClient = new PlayerServerClient(config, {
+            onStatus: publishPlayerServerStatus,
+            onDatapool: publishDatapool
+        });
+        playerServerClient.start();
+    } catch (error) {
+        console.error('Failed to start player server connection:', error);
+        publishPlayerServerStatus({
+            state: 'error',
+            color: null,
+            message: 'Could not load client/config/environment/player-server.json; check its host, port, and password.'
+        });
+    }
+}
 
 ipcMain.handle('settings:update-cookie', async (_event, cookie) => {
     if (typeof cookie !== 'string' || !cookie.trim()) {
@@ -55,6 +131,7 @@ ipcMain.handle('settings:update-cookie', async (_event, cookie) => {
 
     await fs.writeFile(COOKIE_FILE, `${cookie.trim()}\n`, 'utf8');
     await nerfApiStore.initialize();
+    await refreshPlayerData();
 });
 
 ipcMain.handle('settings:get-api-request-count', () => {
@@ -67,6 +144,11 @@ ipcMain.handle('settings:get-latest-status', () => {
         message: latestStdoutMessage
     };
 });
+
+ipcMain.handle('player-server:get-state', () => ({
+    status: latestPlayerServerStatus,
+    datapool: latestDatapool
+}));
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -109,7 +191,19 @@ app.whenReady().then(async () => {
         }
     });
 
+    await startPlayerServer();
     await nerfApiStore.initialize();
+    await refreshPlayerData();
+    playerDataRefreshTimer = setInterval(() => {
+        refreshPlayerData().catch(error => {
+            console.error('Failed to refresh player data:', error);
+        });
+    }, PLAYER_DATA_REFRESH_INTERVAL_MS);
+});
+
+app.on('before-quit', () => {
+    clearInterval(playerDataRefreshTimer);
+    playerServerClient?.close();
 });
 
 app.on('window-all-closed', () => {

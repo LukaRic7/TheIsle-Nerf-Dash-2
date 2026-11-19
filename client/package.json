@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "src/main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "test": "node --test"
   },
   "keywords": [],
   "author": "",
@@ -11,5 +12,8 @@
   "description": "",
   "devDependencies": {
     "electron": "^45.3.2"
+  },
+  "dependencies": {
+    "ws": "^8.23.0"
   }
 }

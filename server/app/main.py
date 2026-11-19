@@ -20,8 +20,9 @@ INTEGER_FIELDS = ("bones", "meat", "minutes_played", "level")
 BOOLEAN_FIELDS = ("is_prime",)
 STRING_FIELDS = ("current_dino", "username")
 FLOAT_FIELDS = ("health", "stamina", "hunger", "thirst", "growth")
+LOCATION_FIELDS = frozenset(("x", "y"))
 DATA_FIELDS = frozenset(
-    INTEGER_FIELDS + BOOLEAN_FIELDS + STRING_FIELDS + FLOAT_FIELDS
+    INTEGER_FIELDS + BOOLEAN_FIELDS + STRING_FIELDS + FLOAT_FIELDS + ("location",)
 )
 
 
@@ -247,6 +248,17 @@ class PlayerServer:
                 or (isinstance(value, float) and not math.isfinite(value))
             ):
                 raise ValueError(f"invalid_{field}")
+
+        location = data["location"]
+        if not isinstance(location, dict) or set(location) != LOCATION_FIELDS:
+            raise ValueError("invalid_location")
+        for axis, value in location.items():
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or (isinstance(value, float) and not math.isfinite(value))
+            ):
+                raise ValueError(f"invalid_location_{axis}")
 
         return data
 
