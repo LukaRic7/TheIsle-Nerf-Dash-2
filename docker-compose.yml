@@ -1,0 +1,14 @@
+services:
+  player-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8765}:8765"
+    environment:
+      SERVER_PASSWORD: "${SERVER_PASSWORD:?Set SERVER_PASSWORD in the Portainer stack environment}"
+      PORT: "8765"
+      HEARTBEAT_TIMEOUT_SECONDS: "${HEARTBEAT_TIMEOUT_SECONDS:-45}"
+      HEARTBEAT_CHECK_INTERVAL_SECONDS: "${HEARTBEAT_CHECK_INTERVAL_SECONDS:-5}"
+      AUTH_TIMEOUT_SECONDS: "${AUTH_TIMEOUT_SECONDS:-10}"

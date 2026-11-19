@@ -1,0 +1,13 @@
+:root {
+    --header-height: 46px;
+    --side-panel-min-width: 300px;
+
+    --background: #14171c;
+    --header-background: #1c2027;
+    --panel-background: #1a1e24;
+    --border-color: #2c313a;
+
+    --text-primary: #e6e9ef;
+    --text-secondary: #9299a5;
+    --accent: #4f8cff;
+}
