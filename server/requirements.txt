@@ -1,2 +1,3 @@
 loggerric2
 websockets>=13,<16
+colorama
