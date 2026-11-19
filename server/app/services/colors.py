@@ -1,4 +1,4 @@
-import loggerric as lr
+import loggerric2 as lr
 import random
 
 class ColorManager:
